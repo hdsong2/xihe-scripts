@@ -54,7 +54,7 @@ def main(args):
     
     (account, startTime, endTime, cloudType, enabled) = (args.username, args.start_time, args.end_time, args.type, 
                                                          args.enabled)
-    print(manual_cmd.format(generateDoc(account, cloudType, startTime, endTime, enabled)))
+    print(manual_cmd.format(json.dumps(generateDoc(account, cloudType, startTime, endTime, enabled))))
     
 
 
