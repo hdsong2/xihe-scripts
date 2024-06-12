@@ -13,7 +13,7 @@ manual_cmd = 'db.user_whitelist.insert({})'
 batch_cmd = 'db.user_whitelist.insertMany({})'
 
 def str_to_timestamp(date_string: str, format='%Y-%m-%d %H:%M:%S') -> int:
-    dt_object = datetime.strptime(date_string, format) 
+    dt_object = datetime.strptime(date_string.strip(), format) 
     return int(dt_object.timestamp())  
 
 def str_to_bool(s: str) -> bool:
@@ -34,7 +34,7 @@ def generateDoc(username: str, kind: str, start_time: int, end_time: int, enable
 
 def generateDocs(sheet: Worksheet) -> str:
     docs = []
-    for row in sheet.iter_rows(min_row=sheet.min_row+2, max_row=sheet.max_row-1, values_only=True):
+    for row in sheet.iter_rows(min_row=sheet.min_row+2, max_row=sheet.max_row, values_only=True):
         (account, startTime, endTime, cloudType, enabled) = row
         docs.append(generateDoc(account, cloudType, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
 
