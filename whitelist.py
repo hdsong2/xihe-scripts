@@ -22,10 +22,10 @@ def str_to_bool(s: str) -> bool:
 
     return s == "true"
 
-def generateDoc(username: str, kind: str, start_time: int, end_time: int, enabled: bool) \
+def generateDoc(account: str, kind: str, start_time: int, end_time: int, enabled: bool) \
     -> Dict[str, Union[str, int, bool]]:
     return {
-        'account': username,
+        'account': account,
         'type': kind,
         'enabled': enabled, 
         'start_time': start_time,
@@ -35,8 +35,10 @@ def generateDoc(username: str, kind: str, start_time: int, end_time: int, enable
 def generateDocs(sheet: Worksheet) -> str:
     docs = []
     for row in sheet.iter_rows(min_row=sheet.min_row+2, max_row=sheet.max_row, values_only=True):
-        (account, startTime, endTime, cloudType, enabled) = row
-        docs.append(generateDoc(account, cloudType, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
+        (account, startTime, endTime) = row
+        kind = "cloud" if len(row) != 5 else row[3]
+        enabled = True if len(row) != 5 else row[4]
+        docs.append(generateDoc(account, kind, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
 
     return json.dumps(docs)
 
@@ -46,15 +48,13 @@ def main(args):
         sheet = workbook.active
         docs_string = generateDocs(sheet)
         workbook.close()
-        with open('./output/cmd.js', 'w') as f:
-            f.write(batch_cmd.format(docs_string))
-        
-        return
-    
-    
-    (account, startTime, endTime, cloudType, enabled) = (args.username, args.start_time, args.end_time, args.type, 
+        out = batch_cmd.format(docs_string)
+    else:
+        (account, startTime, endTime, cloudType, enabled) = (args.username, args.start_time, args.end_time, args.type, 
                                                          args.enabled)
-    print(manual_cmd.format(json.dumps(generateDoc(account, cloudType, startTime, endTime, enabled))))
+        out = manual_cmd.format(json.dumps(generateDoc(account, cloudType, startTime, endTime, enabled)))
+        
+    sys.stdout.write('\n' + out + '\n\n')
     
 
 
@@ -69,12 +69,12 @@ if __name__ == '__main__':
 
     manual_parser = subparsers.add_parser('manual', description='insert account manually')
     manual_parser.add_argument('-u', '--username', required=True, help='xihe account')
-    manual_parser.add_argument('-t', '--type', required=True, help='allow module')
+    manual_parser.add_argument('-t', '--type', default="cloud", help='allow module')
     manual_parser.add_argument('--start_time', type=str_to_timestamp, required=True, 
                                help='timestamp like "2024-06-12 09:27:00"')
     manual_parser.add_argument('--end_time', type=str_to_timestamp, required=True, 
                                help='timestamp like "2024-06-12 09:27:00"')
-    manual_parser.add_argument('--enabled', type=str_to_bool, required=True, help="open or block permission")
+    manual_parser.add_argument('--enabled', type=str_to_bool, default=True, help="open or block permission")
 
     batch_parser = subparsers.add_parser('batch', description="insert accounts in batch")
     batch_parser.add_argument('-f', '--filename', type=str, required=True, help="the excel of whitelist")
