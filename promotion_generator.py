@@ -3,8 +3,8 @@
 import uuid
 import json
 from datetime import datetime, timedelta
-
-cmd = 'db.promotion.insert({})'
+import argparse
+import sys
 
 def generate_promotion_info(promotion_id="", name="", desc="", duration="", poster="") -> str:
     if promotion_id == "":
@@ -26,7 +26,15 @@ def generate_promotion_info(promotion_id="", name="", desc="", duration="", post
     })
 
 if __name__ == '__main__':
-    print()
-    print(cmd.format(generate_promotion_info(promotion_id="mindspore_clockin_25" ,name="昇思MindSpore 25天学习打卡营", desc="每天15分钟，25天打通AI任督二脉", 
-                                             duration="2024.06.15-2024.07.25")))
-    print()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pid', required=True, help='promotion id')
+    parser.add_argument('-n', '--name', required=True, help='promotion name')
+    parser.add_argument('--desc', required=True, help='promotion desc')
+    parser.add_argument('-d', '--duration', required=True, help='promotion duration')
+
+    args = parser.parse_args()
+
+    out = 'db.promotion.insert({})'.format(generate_promotion_info(promotion_id= args.pid, name=args.name, 
+                                                                   desc=args.desc, duration=args.duration))
+    
+    sys.stdout.write('\n' + out + '\n\n')
