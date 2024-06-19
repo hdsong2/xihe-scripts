@@ -34,11 +34,14 @@ def generateDoc(account: str, kind: str, start_time: int, end_time: int, enabled
 
 def generateDocs(sheet: Worksheet) -> str:
     docs = []
+    filter = set()
     for row in sheet.iter_rows(min_row=sheet.min_row+2, max_row=sheet.max_row, values_only=True):
-        (account, startTime, endTime) = row
-        kind = "cloud" if len(row) != 5 else row[3]
-        enabled = True if len(row) != 5 else row[4]
+        (account, startTime, endTime, kind, enabled) = row
+        if account in filter:
+            print("{account} is duplicate!".format(account=account))
+            continue
         docs.append(generateDoc(account, kind, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
+        filter.add(account)
 
     return json.dumps(docs)
 
