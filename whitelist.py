@@ -10,11 +10,13 @@ import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
 
 manual_cmd = 'db.user_whitelist.insert({})'
-batch_cmd = 'db.user_whitelist.insertMany({})'
+batch_cmd = 'db.user_whitelist.insertMany({}, {{ordered: false}})'
+
+def str_to_datetime(date_string: str, format='%Y-%m-%d %H:%M:%S') -> datetime:
+    return datetime.strptime(date_string.strip(), format)
 
 def str_to_timestamp(date_string: str, format='%Y-%m-%d %H:%M:%S') -> int:
-    dt_object = datetime.strptime(date_string.strip(), format) 
-    return int(dt_object.timestamp())  
+    return int(str_to_datetime(date_string, format).timestamp())
 
 def str_to_bool(s: str) -> bool:
     if s not in ['true', 'false']:
@@ -34,11 +36,18 @@ def generateDoc(account: str, kind: str, start_time: int, end_time: int, enabled
 
 def generateDocs(sheet: Worksheet) -> str:
     docs = []
+    filter = set()
     for row in sheet.iter_rows(min_row=sheet.min_row+2, max_row=sheet.max_row, values_only=True):
-        (account, startTime, endTime) = row
-        kind = "cloud" if len(row) != 5 else row[3]
-        enabled = True if len(row) != 5 else row[4]
+        (account, startTime, endTime, kind, enabled) = row
+        if account in filter:
+            print("{account} is duplicate!".format(account=account))
+            continue
+        if isinstance(startTime, str):
+            startTime = str_to_datetime(startTime)
+        if isinstance(endTime, str):
+            endTime = str_to_datetime(endTime)
         docs.append(generateDoc(account, kind, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
+        filter.add(account)
 
     return json.dumps(docs)
 
