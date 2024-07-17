@@ -10,11 +10,13 @@ import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
 
 manual_cmd = 'db.user_whitelist.insert({})'
-batch_cmd = 'db.user_whitelist.insertMany({})'
+batch_cmd = 'db.user_whitelist.insertMany({}, {{ordered: false}})'
+
+def str_to_datetime(date_string: str, format='%Y-%m-%d %H:%M:%S') -> datetime:
+    return datetime.strptime(date_string.strip(), format)
 
 def str_to_timestamp(date_string: str, format='%Y-%m-%d %H:%M:%S') -> int:
-    dt_object = datetime.strptime(date_string.strip(), format) 
-    return int(dt_object.timestamp())  
+    return int(str_to_datetime(date_string, format).timestamp())
 
 def str_to_bool(s: str) -> bool:
     if s not in ['true', 'false']:
@@ -40,6 +42,10 @@ def generateDocs(sheet: Worksheet) -> str:
         if account in filter:
             print("{account} is duplicate!".format(account=account))
             continue
+        if isinstance(startTime, str):
+            startTime = str_to_datetime(startTime)
+        if isinstance(endTime, str):
+            endTime = str_to_datetime(endTime)
         docs.append(generateDoc(account, kind, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
         filter.add(account)
 
