@@ -15,7 +15,7 @@ cmd = 'db.promotion.insertMany({}, {{ordered: false}})'
 def generate_promotion_info(sheet: Worksheet) -> str:
     docs = []
     for row in sheet.iter_rows(min_row=sheet.min_row+1, max_row=sheet.max_row, values_only=True):
-        (promotion_id, name, desc, startTime, endTime, host, kind, way, priority, poster, intro) = row
+        (promotion_id, name, desc, startTime, endTime, host, kind, way, priority, is_static, poster, intro) = row
         
         if promotion_id == None:
             continue
@@ -36,6 +36,7 @@ def generate_promotion_info(sheet: Worksheet) -> str:
             'way': way,
             'poster': poster,
             'intro': intro,
+            'is_static': is_static,
         }
 
         if priority != None:
