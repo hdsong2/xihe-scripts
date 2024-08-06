@@ -2,21 +2,16 @@
 
 import argparse
 import json
-from datetime import datetime
 import sys
 from typing import Dict, Union
 
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
 
+import utils
+
 manual_cmd = 'db.user_whitelist.insert({})'
 batch_cmd = 'db.user_whitelist.insertMany({}, {{ordered: false}})'
-
-def str_to_datetime(date_string: str, format='%Y-%m-%d %H:%M:%S') -> datetime:
-    return datetime.strptime(date_string.strip(), format)
-
-def str_to_timestamp(date_string: str, format='%Y-%m-%d %H:%M:%S') -> int:
-    return int(str_to_datetime(date_string, format).timestamp())
 
 def str_to_bool(s: str) -> bool:
     if s not in ['true', 'false']:
@@ -43,9 +38,9 @@ def generateDocs(sheet: Worksheet) -> str:
             print("{account} is duplicate!".format(account=account))
             continue
         if isinstance(startTime, str):
-            startTime = str_to_datetime(startTime)
+            startTime = utils.str_to_datetime(startTime)
         if isinstance(endTime, str):
-            endTime = str_to_datetime(endTime)
+            endTime = utils.str_to_datetime(endTime)
         docs.append(generateDoc(account, kind, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
         filter.add(account)
 
@@ -79,9 +74,9 @@ if __name__ == '__main__':
     manual_parser = subparsers.add_parser('manual', description='insert account manually')
     manual_parser.add_argument('-u', '--username', required=True, help='xihe account')
     manual_parser.add_argument('-t', '--type', default="cloud", help='allow module')
-    manual_parser.add_argument('--start_time', type=str_to_timestamp, required=True, 
+    manual_parser.add_argument('--start_time', type=utils.str_to_timestamp, required=True, 
                                help='timestamp like "2024-06-12 09:27:00"')
-    manual_parser.add_argument('--end_time', type=str_to_timestamp, required=True, 
+    manual_parser.add_argument('--end_time', type=utils.str_to_timestamp, required=True, 
                                help='timestamp like "2024-06-12 09:27:00"')
     manual_parser.add_argument('--enabled', type=str_to_bool, default=True, help="open or block permission")
 
