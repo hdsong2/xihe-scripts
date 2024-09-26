@@ -4,3 +4,6 @@ input
 output
 
 __pycache__
+
+ca.crt
+*.json
