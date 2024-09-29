@@ -1,7 +1,6 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 from datetime import datetime
-
 
 def str_to_datetime(date_string: str, format='%Y-%m-%d %H:%M:%S') -> datetime:
     return datetime.strptime(date_string.strip(), format)
