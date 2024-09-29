@@ -10,8 +10,8 @@ _client = None
 _database = None
 
 def initialize(config: Dict[str, Union[str, int]]):
-    (rwuser, password, ip, port, database) = \
-    config['rwuser'], config['password'], config['ip'], config['port'], config['database']
+    (rwuser, password, ip, port, database, ca_file) = \
+    config['rwuser'], config['password'], config['ip'], config['port'], config['database'], config["cafile"]
 
     global _client, _database
     user = urllib.parse.quote_plus(rwuser)
@@ -19,7 +19,7 @@ def initialize(config: Dict[str, Union[str, int]]):
 
     uri = 'mongodb://{user}:{password}@{ip}:{port}/?authSource={db}'.format(
         user=user, password=pwd, ip=ip, port=port, db=database)
-    _client = MongoClient(uri, connectTimeoutMS=5000, tls=True, tlsAllowInvalidHostnames=True, tlsCAFile='./ca.crt')
+    _client = MongoClient(uri, connectTimeoutMS=5000, tls=True, tlsAllowInvalidHostnames=True, tlsCAFile=ca_file)
     _database = database
 
 def db(name: str = None) -> Database:
