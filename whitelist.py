@@ -94,12 +94,12 @@ if __name__ == '__main__':
 
     manual_parser = subparsers.add_parser('manual', description='insert account manually')
     manual_parser.add_argument('-u', '--username', required=True, help='xihe account')
-    manual_parser.add_argument('-t', '--type', default="cloud", help='allow module')
+    manual_parser.add_argument('-t', '--type', default="cloud", help='allowed module')
     manual_parser.add_argument('--start_time', type=utils.str_to_timestamp, required=True, 
                                help='timestamp like "2024-06-12 09:27:00"')
     manual_parser.add_argument('--end_time', type=utils.str_to_timestamp, required=True, 
                                help='timestamp like "2024-06-12 09:27:00"')
-    manual_parser.add_argument('--enabled', type=str_to_bool, default=True, help="open or block permission")
+    manual_parser.add_argument('--enabled', type=str_to_bool, default=True, help="open or block permission [true/false]")
 
     batch_parser = subparsers.add_parser('batch', description="insert accounts in batch")
     batch_parser.add_argument('-f', '--filename', type=str, required=True, help="the excel of whitelist")
