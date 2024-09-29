@@ -1,27 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import json
 import sys
-from typing import Dict, Union
+import json
 
 import openpyxl
-from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl import Workbook
+import pymongo
 
 import utils
-
-manual_cmd = 'db.user_whitelist.insert({})'
-batch_cmd = 'db.user_whitelist.insertMany({}, {{ordered: false}})'
+import mongo
 
 def str_to_bool(s: str) -> bool:
     if s not in ['true', 'false']:
         raise Exception('input should be "true" or "false"')
 
-    return s == "true"
+    return s == 'true'
 
-def generateDoc(account: str, kind: str, start_time: int, end_time: int, enabled: bool) \
-    -> Dict[str, Union[str, int, bool]]:
-    return {
+def upsert_whitelist(account: str, kind: str, start_time: int, end_time: int, enabled: bool):
+    db = mongo.db()
+
+    doc = {
         'account': account,
         'type': kind,
         'enabled': enabled, 
@@ -29,37 +28,59 @@ def generateDoc(account: str, kind: str, start_time: int, end_time: int, enabled
         'end_time': end_time,
     }  
 
-def generateDocs(sheet: Worksheet) -> str:
-    docs = []
-    filter = set()
-    for row in sheet.iter_rows(min_row=sheet.min_row+2, max_row=sheet.max_row, values_only=True):
-        (account, startTime, endTime, kind, enabled) = row
-        if account in filter:
-            print("{account} is duplicate!".format(account=account))
-            continue
-        if isinstance(startTime, str):
-            startTime = utils.str_to_datetime(startTime)
-        if isinstance(endTime, str):
-            endTime = utils.str_to_datetime(endTime)
-        docs.append(generateDoc(account, kind, int(startTime.timestamp()), int(endTime.timestamp()), enabled))
-        filter.add(account)
+    filter = {'account': account, 'type': kind}
+    result = db.user_whitelist.replace_one(filter, doc, upsert=True)
 
-    return json.dumps(docs)
+    print(result.raw_result)
+
+def bulk_write_whitelist(wb: Workbook):
+    sheet = wb.active
+    filter = set([])
+    operations = []
+
+    for row in sheet.iter_rows(min_row=sheet.min_row+1, values_only=True):
+        (account, start_time, end_time, kind, enabled) = row
+        
+        if not any(row):
+            break
+
+        key = (account, kind)
+        if key in filter:
+            continue
+
+        if isinstance(start_time, str):
+            start_time = utils.str_to_datetime(start_time)
+        if isinstance(end_time, str):
+            end_time = utils.str_to_datetime(end_time)
+            
+        operations.append(pymongo.ReplaceOne(
+            {'account': account, 'type': kind},
+            {
+                'account': account,
+                'type': kind,
+                'enabled': enabled, 
+                'start_time': int(start_time.timestamp()),
+                'end_time': int(end_time.timestamp()),
+            },
+            upsert=True
+        ))  
+        
+        filter.add(key)
+
+    db = mongo.db()
+    result = db.user_whitelist.bulk_write(operations, ordered=False)
+
+    print(result.bulk_api_result)
 
 def main(args):
     if hasattr(args, 'filename'):
-        workbook = openpyxl.load_workbook(args.filename)
-        sheet = workbook.active
-        docs_string = generateDocs(sheet)
-        workbook.close()
-        out = batch_cmd.format(docs_string)
+        wb = openpyxl.load_workbook(args.filename)
+        bulk_write_whitelist(wb)
+        wb.close()
     else:
         (account, startTime, endTime, cloudType, enabled) = (args.username, args.start_time, args.end_time, args.type, 
                                                          args.enabled)
-        out = manual_cmd.format(json.dumps(generateDoc(account, cloudType, startTime, endTime, enabled)))
-        
-    sys.stdout.write('\n' + out + '\n\n')
-    
+        upsert_whitelist(account, cloudType, startTime, endTime, enabled) 
 
 
 if __name__ == '__main__':
@@ -83,6 +104,12 @@ if __name__ == '__main__':
     batch_parser = subparsers.add_parser('batch', description="insert accounts in batch")
     batch_parser.add_argument('-f', '--filename', type=str, required=True, help="the excel of whitelist")
     
-    args = parser.parse_args()
-        
+    config = None
+    with open('./mongo.json') as f:
+        config = json.load(f)
+    mongo.initialize(config)
+
+    args = parser.parse_args()         
     main(args)
+
+    mongo.close()
