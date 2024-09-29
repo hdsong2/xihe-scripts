@@ -1,36 +1,37 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import json
 import argparse
 import sys
-from datetime import timezone
 
 import openpyxl
-from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl import Workbook
+import pymongo
 
 import utils
+import mongo
 
-cmd = 'db.promotion.insertMany({}, {{ordered: false}})'
+def generate_promotions(wb: Workbook) -> str:
+    sheet = wb.active
 
-def generate_promotion_info(sheet: Worksheet) -> str:
-    docs = []
-    for row in sheet.iter_rows(min_row=sheet.min_row+1, max_row=sheet.max_row, values_only=True):
-        (promotion_id, name, desc, startTime, endTime, host, kind, way, priority, poster, intro, need_sign_up) = row
+    operations = []
+    for row in sheet.iter_rows(min_row=sheet.min_row+1, values_only=True):
+        (promotion_id, name, desc, start_time, end_time, host, kind, way, priority, poster, intro, need_sign_up) = row
         
-        if promotion_id == None:
-            continue
+        if not any(row): break
+        if promotion_id == None: continue
 
-        if isinstance(startTime, str):
-            startTime = utils.str_to_datetime(startTime)
-        if isinstance(endTime, str):
-            endTime = utils.str_to_datetime(endTime)
+        if isinstance(start_time, str):
+            start_time = utils.str_to_datetime(start_time)
+        if isinstance(end_time, str):
+            end_time = utils.str_to_datetime(end_time)
             
         doc = {
             'id': promotion_id,
             'name': name,
             'desc': desc,
-            'start_time': int(startTime.timestamp()),
-            'end_time': int(endTime.timestamp()),
+            'start_time': int(start_time.timestamp()),
+            'end_time': int(end_time.timestamp()),
             'type': kind,
             'host': host if host else "",
             'way': way,
@@ -43,27 +44,38 @@ def generate_promotion_info(sheet: Worksheet) -> str:
             doc['priority'] = priority
         if need_sign_up != None and isinstance(need_sign_up, bool):
             doc['is_static'] = not need_sign_up
-        
-        docs.append(doc)
 
-    return json.dumps(docs)
+        operations.append(pymongo.ReplaceOne(
+            {'id': promotion_id},
+            doc,
+            upsert=True
+        ))
+        
+        db = mongo.db()
+        result = db.promotion.bulk_write(operations, ordered=False)
+        
+        print(result.bulk_api_result)
 
 def main(args):
-    workbook = openpyxl.load_workbook(args.filename)
-    sheet = workbook.active
-    info = generate_promotion_info(sheet)
-    workbook.close()
-
-    out = cmd.format(info)
-
-    sys.stdout.write('\n' + out + '\n\n')
-    
+    wb = openpyxl.load_workbook(args.filename)
+    generate_promotions(wb)
+    wb.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('-f', '--filename', required=True, help='the excel of promotion')
+    if len(sys.argv[1:]) == 0:
+        parser.print_help()
+        sys.exit(1)
+    
+    parser.add_argument('-f', '--filename', required=True, help='the excel of promotions')
+
+    config = None
+    with open('./mongo.json') as f:
+        config = json.load(f)
+    mongo.initialize(config)
 
     args = parser.parse_args()
-
     main(args)
+    
+    mongo.close()
