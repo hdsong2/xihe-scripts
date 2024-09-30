@@ -16,9 +16,9 @@ def generate_promotions(wb: Workbook) -> str:
 
     operations = []
     for row in sheet.iter_rows(min_row=sheet.min_row+1, values_only=True):
-        (promotion_id, name, desc, start_time, end_time, host, kind, way, priority, poster, intro, need_sign_up) = row
-        
         if not any(row): break
+
+        (promotion_id, name, desc, start_time, end_time, host, kind, way, priority, poster, intro, need_sign_up) = row
 
         if isinstance(start_time, str):
             start_time = utils.str_to_datetime(start_time)
@@ -26,16 +26,16 @@ def generate_promotions(wb: Workbook) -> str:
             end_time = utils.str_to_datetime(end_time)
             
         doc = {
-            'id': promotion_id,
-            'name': name,
-            'desc': desc,
+            'id': promotion_id.strip(),
+            'name': name.strip(),
+            'desc': desc.strip(),
             'start_time': int(start_time.timestamp()),
             'end_time': int(end_time.timestamp()),
-            'type': kind,
-            'host': host if host else "",
-            'way': way,
-            'poster': poster,
-            'intro': intro,
+            'type': kind.strip(),
+            'host': host.strip(),
+            'way': way.strip(),
+            'poster': poster.strip(),
+            'intro': intro.strip(),
             'version': 1,
         }
 

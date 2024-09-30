@@ -39,10 +39,11 @@ def bulk_write_whitelist(wb: Workbook):
     operations = []
 
     for row in sheet.iter_rows(min_row=sheet.min_row+1, values_only=True):
-        (account, start_time, end_time, kind, enabled) = row
-        
-        if not any(row):
-            break
+        if not any(row): break
+
+        (account, start_time, end_time, kind, enabled) = row        
+        account = account.strip()
+        kind = kind.strip()
 
         key = (account, kind)
         if key in filter:
