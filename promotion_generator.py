@@ -19,7 +19,6 @@ def generate_promotions(wb: Workbook) -> str:
         (promotion_id, name, desc, start_time, end_time, host, kind, way, priority, poster, intro, need_sign_up) = row
         
         if not any(row): break
-        if promotion_id == None: continue
 
         if isinstance(start_time, str):
             start_time = utils.str_to_datetime(start_time)
@@ -51,10 +50,10 @@ def generate_promotions(wb: Workbook) -> str:
             upsert=True
         ))
         
-        db = mongo.db()
-        result = db.promotion.bulk_write(operations, ordered=False)
-        
-        print(result.bulk_api_result)
+    db = mongo.db()
+    result = db.promotion.bulk_write(operations, ordered=False)
+    
+    print(result.bulk_api_result)
 
 def main(args):
     wb = openpyxl.load_workbook(args.filename)
