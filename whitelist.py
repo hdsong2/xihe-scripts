@@ -42,7 +42,7 @@ def bulk_write_whitelist(wb: Workbook):
         if not any(row): break
 
         (account, start_time, end_time, kind, enabled) = row        
-        account = account.strip()
+        account = str(account).strip()
         kind = kind.strip()
 
         key = (account, kind)
