@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-import json
+import configparser
 
 import openpyxl
 from openpyxl import Workbook
@@ -138,10 +138,10 @@ if __name__ == "__main__":
         "-f", "--filename", type=str, required=True, help="the excel of whitelist"
     )
 
-    config = None
-    with open("./mongo.json") as f:
-        config = json.load(f)
-    mongo.initialize(config)
+    config = configparser.ConfigParser()
+    config.read("./config.ini")
+
+    mongo.initialize(config["prod.mongo"])
 
     args = parser.parse_args()
     main(args)
