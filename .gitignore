@@ -5,5 +5,5 @@ output
 
 __pycache__
 
-ca.crt
-*.json
+*.crt
+*.ini
