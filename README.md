@@ -1,6 +1,6 @@
-# xihe-scripts
+# Xihe-scripts
 
-本仓库提供了一组用于操作xihe数据的脚本工具，包括以下内容:
+本仓库提供了一组用于操作xihe数据的脚本，包括以下内容:
 
 | 脚本 | 描述 |
 | --- | --- |
@@ -23,16 +23,22 @@ pip install -r requirements.txt
 
 配置mongo连接信息
 
-mongo.json
-```json
-{
-    "rwuser": "", // 用户名 
-    "password": "", // 密码
-    "database": "", // 操作的库
-    "ip":"",
-    "port": "",
-    "cafile": ""  // ca文件
-}
+config.ini
+```ini
+[test.mongo]
+# 用户名
+rwuser =
+# 密码
+password =
+ip =
+port =
+# 库
+database =
+# ca文件，未使用值为空
+cafile = 
+
+[prod.mongo]
+# ...
 ```
 
 ## 使用方法
